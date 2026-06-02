@@ -1,4 +1,5 @@
-import { Page, request } from '@playwright/test';
+import { Page, request, type Locator } from '@playwright/test';
+import { BasePage } from "./basePage";
 import { z } from 'zod';
 
 const ProfileApiSchema = z.object({
@@ -8,15 +9,15 @@ const ProfileApiSchema = z.object({
   role: z.string(),
 });
 
-export class ProfilePage {
+export class ProfilePage extends BasePage {
   readonly page: Page;
+  readonly profileFormName: Locator;
 
   constructor(page: Page) {
+    super(page);
     this.page = page;
-  }
-
-  static async navigateToProfilePage(page: Page) {
-    await page.goto('/profile');
+    this.url = '/profile';
+    this.profileFormName = page.locator('body h2');
   }
 
   static async getherUserProfileInfo(page: Page): Promise<{

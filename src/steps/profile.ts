@@ -1,5 +1,5 @@
-import { Page, request } from "@playwright/test";
-import { z } from "zod";
+import { Page, request } from '@playwright/test';
+import { z } from 'zod';
 
 const ProfileApiSchema = z.object({
   email: z.string(),
@@ -10,7 +10,7 @@ const ProfileApiSchema = z.object({
 
 class ProfileSteps {
   static async navigateToProfilePage(page: Page) {
-    await page.goto("/profile");
+    await page.goto('/profile');
   }
 
   static async getherUserProfileInfo(page: Page): Promise<{
@@ -18,33 +18,33 @@ class ProfileSteps {
     email: string;
     gender: string;
   }> {
-    let name = await page.getByLabel("name").textContent();
+    let name = await page.getByLabel('name').textContent();
     if (!name) {
       //Who decided that if could be nullable 🙄
-      name = "Jane Doe"; //Its always jane doe after reset just run this after 30 min if fails :)
+      name = 'Jane Doe'; //Its always jane doe after reset just run this after 30 min if fails :)
     }
-    const email = await page.getByLabel("email").textContent();
+    const email = await page.getByLabel('email').textContent();
     if (!email) {
-      throw new Error("Email not found on the profile page");
+      throw new Error('Email not found on the profile page');
     }
     const role = await page.locator('/*[@id="role"]').textContent();
     if (!role) {
-      throw new Error("Role not found on the profile page");
+      throw new Error('Role not found on the profile page');
     }
 
     const requestContext = await request.newContext();
 
     const userProfile = await requestContext
-      .get("api/profile")
+      .get('api/profile')
       .then((response) => {
         if (response.ok()) {
           return response.json();
         } else {
-          console.debug("Should not happen");
+          console.debug('Should not happen');
         }
       })
       .catch((error) => {
-        console.error("Error fetching user profile:", error);
+        console.error('Error fetching user profile:', error);
       });
 
     const parsedProfile = ProfileApiSchema.parse(userProfile);
@@ -57,7 +57,7 @@ class ProfileSteps {
   }
 
   private static ganderConverter(gander: boolean): string {
-    return gander ? "Male" : "Female";
+    return gander ? 'Male' : 'Female';
   }
 }
 export { ProfileSteps };

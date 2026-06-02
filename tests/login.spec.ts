@@ -1,6 +1,6 @@
 /* eslint-disable playwright/no-element-handle */
 import { expect } from "@playwright/test";
-import { test as pt, test } from "./fixtures/setup.fixture";
+import { test as pt, test } from "./fixtures/setup";
 
 const performLoginAction = async (
   page: Parameters<Parameters<typeof pt>[2]>[0]["page"],

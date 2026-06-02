@@ -1,38 +1,40 @@
 /* eslint-disable playwright/no-element-handle */
 import { expect } from "@playwright/test";
-import { test as pt, test } from "./fixtures/setup";
+import { test } from "./fixtures/setup";
 
-const performLoginAction = async (
-  page: Parameters<Parameters<typeof pt>[2]>[0]["page"],
-  credentials: { email: string; password: string },
-): Promise<void> => {
-  await page.getByLabel("Email").fill(credentials.email);
-  await page.getByLabel("Password").fill(credentials.password);
-  await page.getByRole("button", { name: "Login" }).click();
+// Using a dedicated invalid credentials object for clarity
+const invalidCredentials: { email: string; password: string } = {
+  email: "notauser@nowhere.com",
+  password: "definitelywrong",
 };
 
-pt(
+test.beforeEach(async ({ loginPage }) => {
+  // start each test by opening login page
+  await loginPage.open()
+});
+
+test.afterEach(async ({ page }) => {
+  // tear down the page after the test finishes
+  await page.close();
+});
+
+test(
   "Check User can login using correct credentials",
   { tag: "@browser-opera" },
-  async ({ page }) => {
-    await page.getByLabel("Email").fill(process.env.EMAIL!);
-    await page.getByLabel("Password").fill(process.env.PASSWORD!);
-    await page.getByRole("button", { name: "Login" }).click();
-
+  async ({ page, loginPage, profilePage }) => {
+    await loginPage.performLoginAction(process.env.EMAIL!, process.env.PASSWORD!)
     //TODO: Add assertion to check if user is logged in successfully
+    await expect(page).toHaveURL(/\/profile/);
+    await expect(profilePage.profileFormName).toContainText('User Profile');
   },
 );
 
-pt(
+test(
   "Check User cannot login using incorrect credentials",
   { tag: "@browser-opera" },
-  async ({ page }) => {
-    await page.getByLabel("Email").fill("invalid@example.com");
-    await page.getByLabel("Password").fill("invalidpassword");
-    await page.getByRole("button", { name: "Login" }).click();
-
-     expect((await page.$("p"))?.asElement()).toBeTruthy();
-
+  async ({ page, loginPage }) => {
+    await loginPage.performLoginAction(invalidCredentials.email, invalidCredentials.password)
+    // expect((await page.$("p"))?.asElement()).toBeTruthy(); - don't understand what this assert does.
     await expect(page).not.toHaveURL(/\/profile/);
   },
 );
@@ -40,51 +42,32 @@ pt(
 test(
   "Check that successful login redirects user to the profile page",
   { tag: "@browser-opera" },
-  async ({ page }) => {
+  async ({ page, loginPage }) => {
     const preLoginUrl: string = page.url();
-
-    await performLoginAction(page, {
-      email: process.env.EMAIL!,
-      password: process.env.PASSWORD!,
-    });
-
+    await loginPage.performLoginAction(process.env.EMAIL!, process.env.PASSWORD!)
     await expect(page).toHaveURL(/\/profile/);
     const postLoginUrl: string = page.url();
-    expect(typeof postLoginUrl).toBe("string");
+    // expect(typeof postLoginUrl).toBe("string"); - don't think this necessary here
     expect(postLoginUrl).not.toEqual(preLoginUrl);
   },
 );
 
-pt(
+test(
   "Check that an error message is displayed when wrong credentials are entered",
   { tag: "@browser-opera" },
-  async ({ page }) => {
-    // Using a dedicated invalid credentials object for clarity
-    const invalidCredentials: { email: string; password: string } = {
-      email: "notauser@nowhere.com",
-      password: "definitelywrong",
-    };
-
-    await performLoginAction(page, invalidCredentials);
-
+  async ({ loginPage }) => {
+    await loginPage.performLoginAction(invalidCredentials.email, invalidCredentials.password)
     // The error paragraph is expected to become visible after failed login
-    const errorMessageLocator = page.locator("p");
-    await expect(errorMessageLocator).toBeVisible();
-    await expect(errorMessageLocator).toContainText("Invalid credentials");
+    await expect(loginPage.messagePopup).toBeVisible();
+    await expect(loginPage.messagePopup).toContainText("Invalid credentials");
   },
 );
 
-pt(
-  "Check that submitting the login form with empty fields shows an error",
+test(
+  "Check that submitting the login form with empty fields shows an error", // remain on login page but will not show error message
   { tag: "@browser-opera" },
-  async ({ page }) => {
-    const emptyCredentials: { email: string; password: string } = {
-      email: "",
-      password: "",
-    };
-
-    await performLoginAction(page, emptyCredentials);
-
+  async ({ page, loginPage }) => {
+    await loginPage.performLoginAction("", "")
     // Confirm we are still on the login page and were not redirected
     await expect(page).not.toHaveURL(/\/profile/);
   },

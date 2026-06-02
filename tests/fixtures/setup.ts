@@ -9,11 +9,9 @@ type Pages = {
 
 export const test = baseTest.extend<Pages>({
   loginPage: async ({ page }, use) => {
-    await page.goto(`/`);
     await use(new LoginPage(page));
   },
   profilePage: async ({ page }, use) => {
-    await page.goto(`/profile`);
     await use(new ProfilePage(page));
   }
 });

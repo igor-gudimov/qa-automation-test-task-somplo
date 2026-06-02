@@ -8,7 +8,13 @@ const ProfileApiSchema = z.object({
   role: z.string(),
 });
 
-class ProfileSteps {
+export class ProfilePage {
+  readonly page: Page;
+
+  constructor(page: Page) {
+    this.page = page;
+  }
+
   static async navigateToProfilePage(page: Page) {
     await page.goto('/profile');
   }
@@ -52,12 +58,11 @@ class ProfileSteps {
     return {
       name,
       email,
-      gender: ProfileSteps.ganderConverter(parsedProfile.gander),
+      gender: ProfilePage.genderConverter(parsedProfile.gander),
     };
   }
 
-  private static ganderConverter(gander: boolean): string {
-    return gander ? 'Male' : 'Female';
+  private static genderConverter(gender: boolean): string {
+    return gender ? 'Male' : 'Female';
   }
 }
-export { ProfileSteps };

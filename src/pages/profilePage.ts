@@ -12,35 +12,55 @@ const ProfileApiSchema = z.object({
 export class ProfilePage extends BasePage {
   readonly page: Page;
   readonly profileFormName: Locator;
+  readonly nameField: Locator;
+  readonly emailField: Locator;
+  readonly roleField: Locator;
+  readonly saveButton: Locator;
 
   constructor(page: Page) {
     super(page);
     this.page = page;
     this.url = '/profile';
     this.profileFormName = page.locator('body h2');
+    this.nameField = page.locator('#name');
+    this.emailField = page.locator('#email');
+    this.roleField = page.locator('#role');
+    this.saveButton = page.getByRole("button", { name: "Save" });
   }
 
-  static async getherUserProfileInfo(page: Page): Promise<{
+  async updateUserProfile(name: string, email: string, role: string) {
+    await this.nameField.pressSequentially(name);
+    await this.emailField.pressSequentially(email);
+    await this.roleField.pressSequentially(role);
+    await this.saveButton.click({force: true});
+    await this.page.waitForLoadState('networkidle');
+  }
+
+  async gatherUserProfileInfo(): Promise<{  
     name: string;
     email: string;
     gender: string;
+    role: string;
   }> {
-    let name = await page.getByLabel('name').textContent();
-    if (!name) {
-      //Who decided that if could be nullable 🙄
-      name = 'Jane Doe'; //Its always jane doe after reset just run this after 30 min if fails :)
-    }
-    const email = await page.getByLabel('email').textContent();
-    if (!email) {
-      throw new Error('Email not found on the profile page');
-    }
-    const role = await page.locator('/*[@id="role"]').textContent();
-    if (!role) {
-      throw new Error('Role not found on the profile page');
-    }
+    // textContent() doesn't work for taking user data from page, 
+    // profile page doesn't save user data on html, 
+    // it's only can be taken from "api/profile" GET request
 
+    // let name = await page.getByLabel('name').textContent();  
+    // if (!name) {
+    //   //Who decided that if could be nullable 🙄
+    //   name = 'Jane Doe'; //Its always jane doe after reset just run this after 30 min if fails :)
+    // }
+    // const email = await page.getByLabel('email').textContent();
+    // if (!email) {
+    //   throw new Error('Email not found on the profile page');
+    // }
+    // const role = await page.locator('/*[@id="role"]').textContent();
+    // if (!role) {
+    //   throw new Error('Role not found on the profile page');
+    // }
+    
     const requestContext = await request.newContext();
-
     const userProfile = await requestContext
       .get('api/profile')
       .then((response) => {
@@ -55,11 +75,11 @@ export class ProfilePage extends BasePage {
       });
 
     const parsedProfile = ProfileApiSchema.parse(userProfile);
-
     return {
-      name,
-      email,
+      name: parsedProfile.name,
+      email: parsedProfile.email,
       gender: ProfilePage.genderConverter(parsedProfile.gander),
+      role: parsedProfile.role
     };
   }
 

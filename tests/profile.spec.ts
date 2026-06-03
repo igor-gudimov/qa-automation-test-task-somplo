@@ -40,6 +40,8 @@ test(
     const fakeUser = generateFakeUser();
     await profilePage.updateUserProfile(fakeUser.fullName, fakeUser.email, fakeUser.role)
     await page.reload()
+    // gather user data is possible only by using "api/profile" GET request, 
+    // page html doesn't contain user data
     const currentUserDetails = profilePage.gatherUserProfileInfo()
     expect((await currentUserDetails).name).toContain(fakeUser.fullName);
     expect((await currentUserDetails).email).toContain(fakeUser.email);
